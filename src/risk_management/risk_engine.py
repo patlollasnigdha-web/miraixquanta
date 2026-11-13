@@ -96,6 +96,18 @@ class RiskManagementEngine:
         self.circuit_breaker_state = CircuitBreakerState.NORMAL
         self.circuit_breaker_reason = "Initial normal trading conditions"
 
+    @property
+    def max_drawdown_pct(self) -> float:
+        return self.circuit_monitor.max_portfolio_drawdown * 100.0
+
+    @property
+    def max_position_size_pct(self) -> float:
+        return self.exposure_validator.max_position_size_pct * 100.0
+
+    @property
+    def cash_reserve_required_pct(self) -> float:
+        return self.exposure_validator.cash_reserve * 100.0
+
     def reset_daily_equity(self, starting_equity: Optional[float] = None) -> None:
         """Resets the daily starting equity baseline (e.g. at trading session open)."""
         self.daily_start_equity = starting_equity if starting_equity is not None else self.portfolio_equity

@@ -34,6 +34,10 @@ class BacktestReport:
     risk_configuration: Dict[str, Any] = field(default_factory=dict)
     limitations_and_assumptions: List[str] = field(default_factory=list)
 
+    @property
+    def metrics(self) -> Dict[str, Any]:
+        return self.performance_metrics
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "backtest_id": self.backtest_id,

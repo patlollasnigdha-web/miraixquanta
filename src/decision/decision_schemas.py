@@ -106,9 +106,15 @@ class DecisionExplanation:
     risk_notes: str = ""
     decision_triggers: List[str] = field(default_factory=list)  # Conditions that would change the decision
 
+    @property
+    def narrative(self) -> str:
+        """Alias for verdict_rationale for conversational and API consumers."""
+        return self.verdict_rationale
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "verdict_rationale": self.verdict_rationale,
+            "narrative": self.verdict_rationale,
             "positive_factors": self.positive_factors,
             "negative_factors": self.negative_factors,
             "conflicting_signals": self.conflicting_signals,

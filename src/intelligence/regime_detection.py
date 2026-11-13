@@ -59,6 +59,14 @@ class RegimeDetectionResult:
     model_version: str = "1.0.0"
     model_type: str = "rule_based"  # 'rule_based' or 'gmm'
 
+    @property
+    def current_regime(self) -> str:
+        return self.detected_regime
+
+    @property
+    def as_of_date(self) -> pd.Timestamp:
+        return self.evaluation_timestamp
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "instrument": self.instrument,
@@ -166,6 +174,10 @@ class BaseRegimeDetector(ABC):
     ) -> RegimeDetectionResult:
         """Evaluates and returns market regime result as of a specific date."""
         pass
+
+    def detect_regime(self, df: pd.DataFrame, **kwargs) -> RegimeDetectionResult:
+        """Convenience alias for predict_regime."""
+        return self.predict_regime(df, **kwargs)
 
 
 # -----------------------------------------------------------------
@@ -517,3 +529,8 @@ def compute_regime_transition_matrix(regime_sequence: List[str]) -> pd.DataFrame
             matrix.loc[r, r] = 1.0
 
     return matrix
+
+
+# Backwards compatible alias
+RegimeDetector = RuleBasedRegimeDetector
+

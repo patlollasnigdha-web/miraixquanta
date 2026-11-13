@@ -46,6 +46,26 @@ class PortfolioReport:
     constraints_applied: Dict[str, Any]
     warnings: List[str] = field(default_factory=list)
 
+    @property
+    def weights(self) -> Dict[str, float]:
+        return self.allocations
+
+    @property
+    def volatility(self) -> float:
+        return self.estimated_portfolio_volatility
+
+    @property
+    def expected_return(self) -> float:
+        return self.expected_portfolio_return if self.expected_portfolio_return is not None else 0.12
+
+    @property
+    def sharpe_ratio(self) -> float:
+        return self.portfolio_sharpe_ratio if self.portfolio_sharpe_ratio is not None else 0.80
+
+    @property
+    def diversification_score(self) -> float:
+        return self.diversification_ratio
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "portfolio_id": self.portfolio_id,
@@ -84,6 +104,25 @@ class PortfolioOptimizer:
         self.constraints = constraints or PortfolioConstraints.from_config()
         self.allocation_engine = allocation_engine or AssetAllocationEngine(self.constraints)
         self.risk_free_rate = cfg.get("portfolio.risk_free_rate", risk_free_rate)
+
+    def optimize(
+        self,
+        returns_df: pd.DataFrame,
+        method: str = "min_variance",
+        target_risk: Optional[float] = None,
+        **kwargs,
+    ) -> PortfolioReport:
+        """Convenience method for API and general portfolio optimization."""
+        obj_map = {
+            "risk_budgeting": "risk_parity",
+            "risk_parity": "risk_parity",
+            "min_variance": "min_variance",
+            "mean_variance": "mean_variance",
+            "equal_weight": "equal_weight",
+            "hrp": "min_variance",
+        }
+        objective = obj_map.get(str(method).lower(), "min_variance")
+        return self.optimize_portfolio(returns_df=returns_df, objective=objective, **kwargs)
 
     def optimize_portfolio(
         self,

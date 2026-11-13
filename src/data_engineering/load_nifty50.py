@@ -55,8 +55,9 @@ def load_nifty_daily_official(csv_path: Optional[Path] = None) -> pd.DataFrame:
     df = validate_chronological_order(df, time_col="timestamp", sort_if_unordered=True)
     df = handle_missing_values(df, numeric_cols=["open", "high", "low", "close"])
 
-    logger.info("Loaded official daily NIFTY data: %d rows (%s to %s)",
-                len(df), df["timestamp"].min().strftime("%Y-%m-%d"), df["timestamp"].max().strftime("%Y-%m-%d"))
+    min_ts = df["timestamp"].min().strftime("%Y-%m-%d") if not df.empty and pd.notna(df["timestamp"].min()) else "N/A"
+    max_ts = df["timestamp"].max().strftime("%Y-%m-%d") if not df.empty and pd.notna(df["timestamp"].max()) else "N/A"
+    logger.info("Loaded official daily NIFTY data: %d rows (%s to %s)", len(df), min_ts, max_ts)
     return df
 
 
@@ -114,8 +115,7 @@ def load_nifty_intraday(
 
     combined = handle_missing_values(combined, numeric_cols=numeric_cols)
 
-    logger.info("Loaded intraday %s NIFTY candles: %d rows (%s to %s)",
-                timeframe, len(combined),
-                combined["timestamp"].min().strftime("%Y-%m-%d %H:%M"),
-                combined["timestamp"].max().strftime("%Y-%m-%d %H:%M"))
+    min_ts = combined["timestamp"].min().strftime("%Y-%m-%d %H:%M") if not combined.empty and pd.notna(combined["timestamp"].min()) else "N/A"
+    max_ts = combined["timestamp"].max().strftime("%Y-%m-%d %H:%M") if not combined.empty and pd.notna(combined["timestamp"].max()) else "N/A"
+    logger.info("Loaded intraday %s NIFTY candles: %d rows (%s to %s)", timeframe, len(combined), min_ts, max_ts)
     return combined

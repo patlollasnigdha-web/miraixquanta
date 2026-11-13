@@ -212,3 +212,27 @@ paper_trading:
   replay_speed_multiplier: 1.0
   db_path: "data/paper_trading.db"
 
+api:
+  host: "0.0.0.0"
+  port: 8000
+  title: "MIRAI Quantitative Trading API"
+  version: "1.0.0"
+  cors_origins: ["*"]
+  enable_docs: true
+
+assistant:
+  ollama_host: "http://localhost:11434"
+  default_model: "qwen2.5-coder:7b"
+  timeout_sec: 30.0
+  max_turns: 20
+  temperature: 0.1
+  enable_tool_calling: true
+
+monitoring:
+  latency_threshold_ms: 1000.0
+  stale_data_timeout_sec: 300.0
+  error_rate_threshold_pct: 5.0
+  max_recent_logs: 1000
+  metrics_window_sec: 3600
+
+

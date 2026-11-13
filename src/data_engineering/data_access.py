@@ -139,6 +139,9 @@ class DataAccessService:
         df = self.get_multistock_daily(years=years, symbols=symbols, use_cache=use_cache)
         return get_pivot_prices(df, value_col=value_col)
 
+    # Alias for API & Portfolio consumers
+    get_multistock_prices_matrix = get_multistock_prices
+
     def get_multistock_returns(
         self,
         years: Optional[List[int]] = None,

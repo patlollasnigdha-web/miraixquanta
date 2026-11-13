@@ -64,6 +64,10 @@ class BacktestEngine:
         self.decision_engine = decision_engine or InvestmentDecisionEngine()
         self.benchmark_comparator = BenchmarkComparator(risk_free_rate=self.risk_free_rate)
 
+    def run(self, strategy: Any, data: pd.DataFrame, symbol: str = "TCS", **kwargs) -> BacktestReport:
+        """Convenience runner accepting strategy and data."""
+        return self.run_backtest(data=data, strategy=strategy, symbol=symbol, **kwargs)
+
     def run_backtest(
         self,
         data: pd.DataFrame,

@@ -84,12 +84,14 @@ def load_all_daily_stocks(
     existing_numeric = [c for c in numeric_cols if c in combined.columns]
     combined = handle_missing_values(combined, numeric_cols=existing_numeric, strategy="ffill")
 
+    min_ts_str = combined["timestamp"].min().strftime("%Y-%m-%d") if not combined.empty and pd.notna(combined["timestamp"].min()) else "N/A"
+    max_ts_str = combined["timestamp"].max().strftime("%Y-%m-%d") if not combined.empty and pd.notna(combined["timestamp"].max()) else "N/A"
     logger.info(
         "Successfully loaded multi-stock data: %d rows, %d distinct symbols, date range %s to %s",
         len(combined),
-        combined["symbol"].nunique(),
-        combined["timestamp"].min().strftime("%Y-%m-%d"),
-        combined["timestamp"].max().strftime("%Y-%m-%d")
+        combined["symbol"].nunique() if not combined.empty else 0,
+        min_ts_str,
+        max_ts_str
     )
     return combined
 

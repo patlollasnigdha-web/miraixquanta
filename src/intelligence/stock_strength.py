@@ -43,6 +43,18 @@ class StockStrengthResult:
     weakest_factor: Optional[str] = None
     lob_depth_available: bool = False
 
+    @property
+    def total_score(self) -> float:
+        return self.overall_score
+
+    @property
+    def status(self) -> str:
+        return self.classification
+
+    @property
+    def as_of_date(self) -> pd.Timestamp:
+        return self.evaluation_timestamp
+
     def to_dict(self) -> Dict[str, Any]:
         """Converts result dataclass to dictionary."""
         return {
@@ -661,3 +673,23 @@ class StockStrengthEngine:
             df_rank = df_rank.sort_values("overall_score", ascending=False).reset_index(drop=True)
             df_rank["rank"] = df_rank.index + 1
         return df_rank
+
+    def compute_stock_strength_score(
+        self,
+        df_stock: pd.DataFrame,
+        symbol: str,
+        df_benchmark: Optional[pd.DataFrame] = None,
+        as_of_date: Optional[Union[str, pd.Timestamp]] = None,
+    ) -> StockStrengthResult:
+        """Alias for evaluate_stock_strength."""
+        return self.evaluate_stock_strength(
+            df_stock=df_stock,
+            symbol=symbol,
+            df_benchmark=df_benchmark,
+            as_of_date=as_of_date,
+        )
+
+
+# Class alias for backwards compatibility
+StockStrengthAnalyzer = StockStrengthEngine
+

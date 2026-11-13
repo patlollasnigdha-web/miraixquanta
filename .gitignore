@@ -13,6 +13,7 @@ fi2010/
 # Data and model binaries
 data/raw/
 data/processed/
+*.db
 models/*.joblib
 models/*.pt
 *.npz

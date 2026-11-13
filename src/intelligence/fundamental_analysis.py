@@ -64,6 +64,22 @@ class FundamentalAssessment:
     warnings: List[str] = field(default_factory=list)
     status: str = "VALID"  # 'VALID' or 'INSUFFICIENT_DATA'
 
+    @property
+    def total_score(self) -> float:
+        return self.fundamental_score if self.fundamental_score is not None else 50.0
+
+    @property
+    def as_of_date(self) -> pd.Timestamp:
+        return self.evaluation_date
+
+    @property
+    def confidence(self) -> float:
+        return self.data_coverage
+
+    @property
+    def metrics(self) -> Dict[str, Any]:
+        return self.key_ratios
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "symbol": self.symbol,
@@ -312,6 +328,17 @@ class FundamentalAnalyzer:
             warnings=warnings,
             status="VALID",
         )
+
+    def get_fundamental_score(
+        self,
+        symbol: str,
+        records: Optional[List[FundamentalRecord]] = None,
+        as_of_date: Optional[Union[str, pd.Timestamp]] = None,
+    ) -> FundamentalAssessment:
+        """Convenience method evaluating fundamentals for a symbol."""
+        recs = records if records is not None else []
+        return self.evaluate_fundamentals(records=recs, symbol=symbol, as_of_date=as_of_date)
+
 
     # -------------------------------------------------------------
     # FILE IMPORT PROVIDER

@@ -16,4 +16,7 @@ pytest-cov
 pyarrow
 streamlit
 statsmodels
+fastapi
+uvicorn
+pydantic
 

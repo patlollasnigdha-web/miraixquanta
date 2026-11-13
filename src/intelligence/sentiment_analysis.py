@@ -68,6 +68,22 @@ class SentimentResult:
     status: str = "VALID"  # 'VALID' or 'INSUFFICIENT_DATA'
     warning: Optional[str] = None
 
+    @property
+    def as_of_date(self) -> pd.Timestamp:
+        return self.evaluation_timestamp
+
+    @property
+    def recent_headlines(self) -> List[str]:
+        if not self.articles_analyzed:
+            return []
+        headlines = []
+        for a in self.articles_analyzed:
+            if isinstance(a, dict):
+                headlines.append(a.get("headline", str(a)))
+            elif hasattr(a, "headline"):
+                headlines.append(a.headline)
+        return headlines
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "symbol": self.symbol,
@@ -382,3 +398,25 @@ class SentimentAnalyzer:
 
         logger.info("Loaded %d news items from %s", len(items), path)
         return items
+
+    def analyze_symbol_sentiment(
+        self,
+        symbol: str,
+        news_items: Optional[List[NewsItem]] = None,
+        as_of_date: Optional[Union[str, pd.Timestamp]] = None,
+        lookback_days: Optional[int] = None,
+    ) -> SentimentResult:
+        """Convenience method evaluating sentiment for a symbol."""
+        items = news_items if news_items is not None else []
+        lb = lookback_days if lookback_days is not None else 7
+        return self.evaluate_symbol_sentiment(
+            news_items=items,
+            symbol=symbol,
+            as_of_date=as_of_date,
+            max_lookback_days=lb,
+        )
+
+
+# Class alias for backwards compatibility
+NewsSentimentAnalyzer = SentimentAnalyzer
+
