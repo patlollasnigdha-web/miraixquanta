@@ -24,7 +24,7 @@ class ResponseFormatter:
         sym = data.get("symbol", "N/A")
         verdict = data.get("verdict", "INSUFFICIENT_DATA")
         display_label = data.get("display_label", verdict)
-        score = data.get("composite_score", 0.0)
+        score = data.get("composite_score")
         confidence = data.get("confidence", 0.0)
         risk_status = data.get("risk_status", "UNKNOWN")
         ref_price = data.get("entry_reference_price")
@@ -36,21 +36,38 @@ class ResponseFormatter:
         conflicts = data.get("conflicting_signals", [])
         ts = data.get("timestamp", "Current")
 
+        if verdict == "INSUFFICIENT_DATA":
+            score_str = "N/A (Insufficient Data)"
+            conf_str = "0.00% (Insufficient Coverage)"
+            risk_str = "NOT EVALUATED (Evidence Insufficient)"
+        else:
+            score_str = f"{score:.1f} / 100" if score is not None else "N/A"
+            conf_str = f"{confidence:.2%}"
+            risk_str = risk_status
+
         lines = [
             f"### Investment Analysis: {sym}",
             f"**Authoritative Verdict:** `{verdict}` ({display_label})",
-            f"**Composite Score:** {score:.1f} / 100 | **Model Confidence:** {confidence:.2%}",
-            f"**Risk Gatekeeper Status:** `{risk_status}`",
-            "",
-            "#### 1. Price Targets & Levels",
-            f"- **Reference Entry Price:** ₹{ref_price:.2f}" if ref_price else "- **Reference Entry Price:** N/A",
-            f"- **Suggested Stop-Loss:** ₹{sl:.2f}" if sl else "- **Suggested Stop-Loss:** N/A",
-            f"- **Suggested Take-Profit:** ₹{tp:.2f}" if tp else "- **Suggested Take-Profit:** N/A",
+            f"**Composite Score:** {score_str} | **Model Confidence:** {conf_str}",
+            f"**Risk Gatekeeper Status:** `{risk_str}`",
+        ]
+
+        # Only display price levels if verdict is YES and targets are validated
+        if verdict == "YES" and (ref_price or sl or tp):
+            lines.extend([
+                "",
+                "#### 1. Price Targets & Levels",
+                f"- **Reference Entry Price:** ₹{ref_price:.2f}" if ref_price else "- **Reference Entry Price:** N/A",
+                f"- **Suggested Stop-Loss:** ₹{sl:.2f}" if sl else "- **Suggested Stop-Loss:** N/A",
+                f"- **Suggested Take-Profit:** ₹{tp:.2f}" if tp else "- **Suggested Take-Profit:** N/A",
+            ])
+
+        lines.extend([
             "",
             "#### 2. Decision Rationale & Evidence",
             f"{explanation}",
             "",
-        ]
+        ])
 
         if pos_factors:
             lines.append("**Key Positive Factors:**")

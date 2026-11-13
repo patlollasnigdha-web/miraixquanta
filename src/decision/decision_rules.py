@@ -202,7 +202,7 @@ class DecisionRuleEvaluator:
                 DecisionVerdict.INSUFFICIENT_DATA,
                 DisplayLabel.NO_ACTION,
                 "OBSERVE",
-                50.0,
+                None,
                 0.0,
                 {},
                 {},
@@ -226,7 +226,7 @@ class DecisionRuleEvaluator:
         raw_scores["predictive_model"] = s_model
         if p_mod: pos_factors.append(p_mod)
         if n_mod: neg_factors.append(n_mod)
-        if s_model is None: missing.append("Predictive model output unavailable")
+        if s_model is None: missing.append(f"Predictive model output unavailable (No trained model registered in ModelRegistry for pipeline '{inp.pipeline_id}')")
 
         # Stock Strength
         s_ss, p_ss, n_ss = self._score_stock_strength(inp)
@@ -265,7 +265,7 @@ class DecisionRuleEvaluator:
                 DecisionVerdict.INSUFFICIENT_DATA,
                 DisplayLabel.NO_ACTION,
                 "OBSERVE",
-                50.0,
+                None,
                 0.0,
                 available_scores,
                 {},

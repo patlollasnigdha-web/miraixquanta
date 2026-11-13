@@ -135,16 +135,16 @@ class InvestmentDecision:
     verdict: str  # YES, NO, WAIT, INSUFFICIENT_DATA
     display_label: str  # Strong Buy, Buy, Hold, Sell, Strong Sell, No Action
     action_type: str  # ENTRY_LONG, ENTRY_SHORT, EXIT, HOLD, OBSERVE
-    composite_score: float  # [0.0, 100.0]
-    confidence: float  # [0.0, 1.0]
-    investment_horizon: Union[int, str]
-    entry_reference_price: Optional[float]
-    suggested_stop_loss: Optional[float]
-    suggested_take_profit: Optional[float]
-    factor_contributions: Dict[str, float]
-    factor_scores: Dict[str, float]
-    risk_status: str  # RISK_PENDING, RISK_APPROVED, RISK_BLOCKED
-    explanation: DecisionExplanation
+    composite_score: Optional[float] = None  # [0.0, 100.0] or None if INSUFFICIENT_DATA
+    confidence: float = 0.0  # [0.0, 1.0]
+    investment_horizon: Union[int, str] = "1d"
+    entry_reference_price: Optional[float] = None
+    suggested_stop_loss: Optional[float] = None
+    suggested_take_profit: Optional[float] = None
+    factor_contributions: Dict[str, float] = field(default_factory=dict)
+    factor_scores: Dict[str, float] = field(default_factory=dict)
+    risk_status: str = RiskStatus.RISK_PENDING  # RISK_PENDING, RISK_APPROVED, RISK_BLOCKED
+    explanation: Optional[DecisionExplanation] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -154,7 +154,7 @@ class InvestmentDecision:
             "verdict": self.verdict,
             "display_label": self.display_label,
             "action_type": self.action_type,
-            "composite_score": round(self.composite_score, 2),
+            "composite_score": round(self.composite_score, 2) if self.composite_score is not None else None,
             "confidence": round(self.confidence, 3),
             "investment_horizon": str(self.investment_horizon),
             "entry_reference_price": round(self.entry_reference_price, 4) if self.entry_reference_price is not None else None,
@@ -163,5 +163,5 @@ class InvestmentDecision:
             "factor_contributions": {k: round(v, 2) for k, v in self.factor_contributions.items()},
             "factor_scores": {k: round(v, 2) for k, v in self.factor_scores.items()},
             "risk_status": self.risk_status,
-            "explanation": self.explanation.to_dict(),
+            "explanation": self.explanation.to_dict() if self.explanation else {},
         }

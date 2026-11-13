@@ -56,7 +56,7 @@ export interface DecisionResponse {
   symbol: string;
   verdict: 'YES' | 'NO' | 'WAIT' | 'INSUFFICIENT_DATA';
   display_label: string;
-  composite_score: number;
+  composite_score: number | null;
   confidence: number;
   action_type: string;
   risk_status: string;

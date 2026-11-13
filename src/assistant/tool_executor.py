@@ -6,6 +6,7 @@ Strictly sandboxed: no arbitrary code execution, no SQL injection, no live excha
 
 import time
 from typing import Any, Dict, List, Optional
+import numpy as np
 import pandas as pd
 
 from src.utils.logger import get_logger
@@ -19,6 +20,7 @@ from src.intelligence.regime_detection import RegimeDetector
 from src.intelligence.sentiment_analysis import NewsSentimentAnalyzer
 from src.intelligence.fundamental_analysis import FundamentalAnalyzer
 from src.strategies.momentum_strategy import MomentumStrategy
+from src.models.model_registry import ModelRegistry
 from src.decision.decision_engine import InvestmentDecisionEngine
 from src.decision.decision_schemas import DecisionInput, DecisionVerdict, RiskStatus
 from src.risk_management.risk_engine import RiskManagementEngine
@@ -107,20 +109,24 @@ class ToolExecutor:
     # -------------------------------------------------------------------------
 
     def _get_stock_dataframe(self, symbol: str) -> pd.DataFrame:
-        """Retrieves daily OHLCV dataframe for symbol."""
+        """Retrieves daily OHLCV dataframe for symbol without silently fabricating index data."""
         sym_clean = symbol.strip().upper()
-        df = self.data_service.get_multistock_daily(symbols=[sym_clean])
-        if df.empty:
-            df = self.data_service.get_nifty_daily_index()
-        return df
+        if sym_clean in ("NIFTY", "NIFTY50", "NIFTY 50", "BENCHMARK"):
+            return self.data_service.get_nifty_daily_index()
+        return self.data_service.get_multistock_daily(symbols=[sym_clean])
 
     def _handle_get_stock_strength(self, args: Dict[str, Any]) -> Dict[str, Any]:
         symbol = str(args.get("symbol", "TCS")).strip().upper()
         df = self._get_stock_dataframe(symbol)
-        if df.empty:
-            return {"symbol": symbol, "error": "No market data found for symbol."}
+        if df.empty or len(df) < 5:
+            return {
+                "symbol": symbol,
+                "error": f"No market data found for symbol '{symbol}'. Symbol may be unlisted or invalid.",
+                "status": "INSUFFICIENT_DATA",
+            }
 
-        score_res = self.stock_strength.compute_stock_strength_score(df, symbol=symbol)
+        bench = self.data_service.get_nifty_daily_index()
+        score_res = self.stock_strength.evaluate_stock_strength(df, symbol=symbol, df_benchmark=bench)
         return {
             "symbol": symbol,
             "stock_strength_score": score_res.total_score,
@@ -222,27 +228,158 @@ class ToolExecutor:
             "timestamp": str(sig.timestamp),
         }
 
+    def _get_predictive_model_prediction(
+        self,
+        symbol: str,
+        pipeline_id: str,
+        horizon: str,
+        df: pd.DataFrame,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Queries ModelRegistry for an approved/validated model matching pipeline_id.
+        If found, executes inference on processed features.
+        If no trained model is registered, returns None without inventing predictions (Rule 3A).
+        """
+        try:
+            reg = ModelRegistry()
+            models = reg.list_models(pipeline_id=pipeline_id)
+            if not models:
+                logger.info("Predictive AI Engine: No trained model registered in ModelRegistry for '%s' (Rule 3A limitation).", pipeline_id)
+                return None
+
+            valid_models = [m for m in models if m.get("status") in ("approved", "validated")]
+            if not valid_models:
+                logger.info("Predictive AI Engine: No approved/validated models for '%s'", pipeline_id)
+                return None
+
+            target_meta = valid_models[0]
+            if pipeline_id == "pipeline_a_fi2010":
+                reg_schema = target_meta.get("feature_schema", [])
+                if len(df.columns) >= len(reg_schema):
+                    model_artifact = reg.load_model_artifact(target_meta["model_id"])
+                    X_input = df[reg_schema].iloc[-1:].to_numpy().astype(np.float32)
+                    preds = model_artifact.predict(X_input)
+                    probas = model_artifact.predict_proba(X_input) if hasattr(model_artifact, "predict_proba") else None
+                    return {
+                        "predicted_class": int(preds[0]),
+                        "probabilities": probas[0].tolist() if probas is not None else [0.33, 0.34, 0.33],
+                        "model_id": target_meta["model_id"],
+                        "model_name": target_meta.get("model_name"),
+                        "version": target_meta.get("version"),
+                        "horizon": target_meta.get("prediction_horizon"),
+                        "status": target_meta.get("status"),
+                    }
+            return None
+        except Exception as e:
+            logger.warning("Predictive model check encountered error: %s", e)
+            return None
+
     def _handle_get_investment_decision(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """
         The central investment decision endpoint connecting M03, M05, M06, M07, M08, M09, M11.
         """
         symbol = str(args.get("symbol", "TCS")).strip().upper()
         horizon = str(args.get("horizon", "1d")).strip()
+        pipeline_id = str(args.get("pipeline_id", "pipeline_b_nifty")).strip()
         df = self._get_stock_dataframe(symbol)
 
-        close_price = float(df["close"].iloc[-1]) if not df.empty and "close" in df.columns else 100.0
-        bar_ts = df.index[-1] if not df.empty else pd.Timestamp.now()
+        # Genuine insufficient data: Unlisted or invalid ticker
+        if df.empty or len(df) < 5:
+            inp = DecisionInput(
+                symbol=symbol,
+                timestamp=pd.Timestamp.now(),
+                current_price=None,
+                pipeline_id=pipeline_id,
+                investment_horizon=horizon,
+            )
+            decision = self.decision_engine.make_decision_with_risk(
+                inp=inp,
+                risk_engine=self.risk_engine,
+                current_capital=1_000_000.0,
+            )
+            return {
+                "symbol": symbol,
+                "verdict": decision.verdict,
+                "display_label": decision.display_label,
+                "composite_score": decision.composite_score,
+                "confidence": decision.confidence,
+                "action_type": decision.action_type,
+                "entry_reference_price": None,
+                "suggested_stop_loss": None,
+                "suggested_take_profit": None,
+                "risk_status": decision.risk_status,
+                "explanation": f"Unable to evaluate investment decision for '{symbol}': No historical price or volume data exists in the NIFTY multi-stock dataset. Symbol may be invalid or unlisted.",
+                "positive_factors": [],
+                "negative_factors": [f"Unrecognized or unlisted stock symbol: {symbol}"],
+                "conflicting_signals": [],
+                "timestamp": str(decision.timestamp),
+            }
 
-        # Generate strategy signal
-        strat = MomentumStrategy()
-        signal = strat.generate_signal(df, symbol=symbol) if len(df) >= 55 else None
+        close_price = float(df["close"].iloc[-1])
+        bar_ts = df["timestamp"].iloc[-1] if "timestamp" in df.columns else (
+            df.index[-1] if hasattr(df.index[-1], "isoformat") else pd.Timestamp.now()
+        )
+        bench = self.data_service.get_nifty_daily_index()
+
+        # 1. Stock Strength Intelligence (M05)
+        stock_strength_res = None
+        try:
+            stock_strength_res = self.stock_strength.evaluate_stock_strength(
+                df_stock=df,
+                symbol=symbol,
+                df_benchmark=bench,
+            )
+        except Exception as e:
+            logger.warning("Stock strength calculation failed for %s: %s", symbol, e)
+
+        # 2. Market Regime Detection (M07)
+        regime_res = None
+        try:
+            regime_res = self.regime_detector.detect_regime(bench if not bench.empty else df)
+        except Exception as e:
+            logger.warning("Market regime detection failed: %s", e)
+
+        # 3. Sentiment & Fundamentals (M06)
+        sentiment_res = None
+        try:
+            sentiment_res = self.sentiment_analyzer.analyze_symbol_sentiment(symbol)
+        except Exception as e:
+            logger.warning("Sentiment analysis failed for %s: %s", symbol, e)
+
+        fund_res = None
+        try:
+            fund_res = self.fundamental_analyzer.get_fundamental_score(symbol)
+        except Exception as e:
+            logger.warning("Fundamental analysis failed for %s: %s", symbol, e)
+
+        # 4. Strategy Signal (M08)
+        signal = None
+        try:
+            strat = MomentumStrategy()
+            if len(df) >= 55:
+                signal = strat.generate_signal(df, symbol=symbol)
+        except Exception as e:
+            logger.warning("Strategy signal generation failed for %s: %s", symbol, e)
+
+        # 5. Predictive AI Model & Registry Check (M03 / M04)
+        model_pred = self._get_predictive_model_prediction(
+            symbol=symbol,
+            pipeline_id=pipeline_id,
+            horizon=horizon,
+            df=df,
+        )
 
         inp = DecisionInput(
             symbol=symbol,
             timestamp=bar_ts,
             current_price=close_price,
+            model_prediction=model_pred,
+            stock_strength=stock_strength_res,
+            sentiment=sentiment_res,
+            fundamentals=fund_res,
+            market_regime=regime_res,
             strategy_signal=signal,
-            pipeline_id="pipeline_b_nifty",
+            pipeline_id=pipeline_id,
             investment_horizon=horizon,
         )
 
@@ -390,23 +527,24 @@ class ToolExecutor:
     def _handle_compare_stocks(self, args: Dict[str, Any]) -> Dict[str, Any]:
         symbols = args.get("symbols", ["TCS", "INFY"])
         comparison = []
+        bench = self.data_service.get_nifty_daily_index()
         for sym in symbols:
             s_clean = str(sym).strip().upper()
             df = self._get_stock_dataframe(s_clean)
-            if not df.empty:
-                score_res = self.stock_strength.compute_stock_strength_score(df, symbol=s_clean)
+            if not df.empty and len(df) >= 5:
+                score_res = self.stock_strength.evaluate_stock_strength(df, symbol=s_clean, df_benchmark=bench)
                 score = score_res.total_score
                 status = score_res.status
             else:
-                score = 50.0
-                status = "NEUTRAL"
+                score = None
+                status = "INSUFFICIENT_DATA"
 
             fund_res = self.fundamental_analyzer.get_fundamental_score(s_clean)
             comparison.append({
                 "symbol": s_clean,
                 "stock_strength_score": score,
                 "strength_status": status,
-                "fundamental_score": fund_res.total_score,
+                "fundamental_score": fund_res.total_score if fund_res.fundamental_score is not None else 0.0,
                 "fundamental_classification": fund_res.classification,
             })
 

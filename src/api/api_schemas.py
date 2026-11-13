@@ -128,7 +128,7 @@ class DecisionResponse(BaseModel):
     symbol: str
     verdict: str
     display_label: str
-    composite_score: float
+    composite_score: Optional[float] = None
     confidence: float
     action_type: str
     risk_status: str

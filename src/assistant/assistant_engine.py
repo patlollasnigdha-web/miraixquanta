@@ -61,8 +61,8 @@ class AssistantEngine:
 
         # 2. Rule-based Intent Matching
 
-        # Case A: "Should I invest in X?" / "Buy X?"
-        if any(p in q_lower for p in ["should i invest", "can i buy", "invest in", "buy or sell", "recommend"]):
+        # Case A: "Should I invest in X?" / "Buy X?" / "Analyse X"
+        if any(p in q_lower for p in ["should i invest", "can i buy", "invest in", "buy or sell", "recommend", "analyse", "analyze", "evaluate", "assessment"]):
             intent = "INVESTMENT_DECISION"
             sym = target_symbol or "TCS"
             tool_requests.append(ToolCallRequest(tool_name="get_investment_decision", arguments={"symbol": sym}))
@@ -148,14 +148,27 @@ class AssistantEngine:
         if found:
             return found
 
+        # Detect phrases referring to an invalid / non-existent stock ticker
+        if any(w in text.lower() for w in ["invalid stock ticker", "invalid ticker", "invalid stock", "unknown ticker", "fake ticker"]):
+            return ["INVALID_TICKER"]
+
         stop_words = {
             "SHOULD", "INVEST", "WILL", "WHAT", "WHEN", "WHERE", "WHICH", "COULD",
             "WOULD", "IS", "ARE", "AM", "WAS", "WERE", "DOES", "DO", "DID", "THE",
             "AND", "FOR", "BUY", "SELL", "HOLD", "STOCK", "STOCKS", "PRICE", "MARKET",
             "TRADE", "TRADING", "EXPLAIN", "SHOW", "GIVE", "VIEW", "REPORT", "ANALYSIS",
-            "CAN", "HOW", "WHY"
+            "CAN", "HOW", "WHY", "ANALYSE", "ANALYZE", "A", "AN", "IN", "TO", "OF", "ME"
         }
-        raw_caps = re.findall(r"\b[A-Z]{2,10}\b", text)
+
+        # Check explicit contextual phrase like "invest in <token>", "analyse <token>", "strength of <token>"
+        match = re.search(r"(?:invest\s+in|buy|sell|analyse|analyze|evaluate|strength\s+of|score\s+for)\s+([A-Za-z0-9_-]+)", text, re.IGNORECASE)
+        if match:
+            candidate = match.group(1).strip().upper()
+            if candidate not in stop_words and candidate not in found:
+                found.append(candidate)
+                return found
+
+        raw_caps = re.findall(r"\b[A-Z0-9]{2,15}\b", text)
         for w in raw_caps:
             if w not in stop_words and w not in found:
                 found.append(w)

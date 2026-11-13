@@ -125,11 +125,19 @@ export const DecisionExplorerPage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
                 <div className="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded">
                   <span className="text-slate-400 block text-[10px]">Composite Score</span>
-                  <span className="font-bold text-slate-100">{decision.composite_score.toFixed(1)} / 100</span>
+                  <span className="font-bold text-slate-100">
+                    {decision.verdict === 'INSUFFICIENT_DATA' || decision.composite_score == null
+                      ? 'N/A'
+                      : `${decision.composite_score.toFixed(1)} / 100`}
+                  </span>
                 </div>
                 <div className="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded">
                   <span className="text-slate-400 block text-[10px]">Confidence</span>
-                  <span className="font-bold text-slate-100">{(decision.confidence * 100).toFixed(1)}%</span>
+                  <span className="font-bold text-slate-100">
+                    {decision.verdict === 'INSUFFICIENT_DATA' || decision.confidence === 0
+                      ? '0.0% (N/A)'
+                      : `${(decision.confidence * 100).toFixed(1)}%`}
+                  </span>
                 </div>
                 <div className="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-blue-400" />
@@ -137,10 +145,14 @@ export const DecisionExplorerPage: React.FC = () => {
                     <span className="text-slate-400 block text-[10px]">M11 Risk Shield</span>
                     <span
                       className={`font-bold ${
-                        decision.risk_status === 'RISK_APPROVED' ? 'text-emerald-400' : 'text-rose-400'
+                        decision.verdict === 'INSUFFICIENT_DATA'
+                          ? 'text-slate-400'
+                          : decision.risk_status === 'RISK_APPROVED'
+                          ? 'text-emerald-400'
+                          : 'text-rose-400'
                       }`}
                     >
-                      {decision.risk_status}
+                      {decision.verdict === 'INSUFFICIENT_DATA' ? 'NOT EVALUATED (INSUFFICIENT DATA)' : decision.risk_status}
                     </span>
                   </div>
                 </div>
@@ -148,7 +160,7 @@ export const DecisionExplorerPage: React.FC = () => {
             </div>
 
             {/* Execution Parameter Targets */}
-            {(decision.suggested_stop_loss || decision.suggested_take_profit) && (
+            {decision.verdict === 'YES' && (decision.suggested_stop_loss || decision.suggested_take_profit) && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-[#0B0F19]/60 p-3 rounded border border-slate-800 mb-4 text-xs font-mono">
                 {decision.entry_reference_price && (
                   <div>

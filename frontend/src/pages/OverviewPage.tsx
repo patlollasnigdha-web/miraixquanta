@@ -295,7 +295,9 @@ export const OverviewPage: React.FC<{ onNavigate: (page: string) => void }> = ({
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-slate-400">Composite Score:</span>
                   <span className="font-mono font-semibold text-emerald-400">
-                    {recentDecision.composite_score.toFixed(1)} / 100
+                    {recentDecision.verdict === 'INSUFFICIENT_DATA' || recentDecision.composite_score == null
+                      ? 'N/A'
+                      : `${recentDecision.composite_score.toFixed(1)} / 100`}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">

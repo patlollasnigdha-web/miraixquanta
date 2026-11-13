@@ -219,6 +219,37 @@ class RiskManagementEngine:
                     warnings=warnings,
                 )
 
+        # 1b. Gatekeeper Check: Only YES verdicts are candidates for trade entry approval
+        if decision.verdict == DecisionVerdict.INSUFFICIENT_DATA:
+            rejection_reasons.append("Trade entry rejected: Decision verdict is INSUFFICIENT_DATA due to missing evidence.")
+            return RiskEvaluationResult(
+                symbol=symbol,
+                is_approved=False,
+                risk_status=RiskStatus.RISK_BLOCKED,
+                circuit_breaker_state=self.circuit_breaker_state,
+                allocated_capital=0.0,
+                recommended_position=None,
+                stop_loss=None,
+                take_profit=None,
+                rejection_reasons=rejection_reasons,
+                warnings=warnings,
+            )
+
+        if decision.verdict in (DecisionVerdict.NO, DecisionVerdict.WAIT):
+            rejection_reasons.append(f"Trade entry rejected: Decision verdict is {decision.verdict} (not an actionable BUY/YES verdict).")
+            return RiskEvaluationResult(
+                symbol=symbol,
+                is_approved=False,
+                risk_status=RiskStatus.RISK_BLOCKED,
+                circuit_breaker_state=self.circuit_breaker_state,
+                allocated_capital=0.0,
+                recommended_position=None,
+                stop_loss=None,
+                take_profit=None,
+                rejection_reasons=rejection_reasons,
+                warnings=warnings,
+            )
+
         # 2. Determine Stop Loss level
         stop_loss = decision.suggested_stop_loss
         if stop_loss is None or stop_loss <= 0:
@@ -378,19 +409,32 @@ class RiskManagementEngine:
             decision.suggested_stop_loss = eval_result.stop_loss
 
         if not eval_result.is_approved:
-            # Risk limit breached: block YES verdict
-            if decision.verdict == DecisionVerdict.YES:
+            # Rejection or non-YES decision: block and suppress unsupported targets
+            if decision.verdict == DecisionVerdict.INSUFFICIENT_DATA:
+                decision.entry_reference_price = None
+                decision.suggested_stop_loss = None
+                decision.suggested_take_profit = None
+                decision.explanation.risk_notes = "RISK GATEKEEPER: Trade entry not evaluated due to INSUFFICIENT_DATA."
+            elif decision.verdict in (DecisionVerdict.NO, DecisionVerdict.WAIT):
+                decision.entry_reference_price = None
+                decision.suggested_stop_loss = None
+                decision.suggested_take_profit = None
+                decision.explanation.risk_notes = f"RISK GATEKEEPER: Trade entry not approved for {decision.verdict} verdict."
+            else:
+                # Risk limit breached on a YES decision: block and downgrade to NO
                 decision.verdict = DecisionVerdict.NO
                 decision.display_label = DisplayLabel.NO_ACTION
                 decision.action_type = "OBSERVE"
-
-            for reason in eval_result.rejection_reasons:
-                decision.explanation.conflicting_signals.append(f"RISK VETO: {reason}")
-            decision.explanation.risk_notes = f"RISK BLOCKED: {'; '.join(eval_result.rejection_reasons)}"
-            logger.warning(
-                "Decision for %s BLOCKED by Risk Engine: %s",
-                decision.symbol, eval_result.rejection_reasons
-            )
+                decision.entry_reference_price = None
+                decision.suggested_stop_loss = None
+                decision.suggested_take_profit = None
+                for reason in eval_result.rejection_reasons:
+                    decision.explanation.conflicting_signals.append(f"RISK VETO: {reason}")
+                decision.explanation.risk_notes = f"RISK BLOCKED: {'; '.join(eval_result.rejection_reasons)}"
+                logger.warning(
+                    "Decision for %s BLOCKED by Risk Engine: %s",
+                    decision.symbol, eval_result.rejection_reasons
+                )
         else:
             # Risk approved
             sizing_info = ""

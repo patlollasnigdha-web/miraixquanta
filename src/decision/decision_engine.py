@@ -104,9 +104,10 @@ class InvestmentDecisionEngine:
             explanation=explanation,
         )
 
+        score_display = f"{composite_score:.1f}" if composite_score is not None else "N/A"
         logger.info(
-            "Decision for %s (%s): %s [%s] (Score: %.1f, Conf: %.2f)",
-            inp.symbol, inp.pipeline_id, verdict, display_label, composite_score, confidence
+            "Decision for %s (%s): %s [%s] (Score: %s, Conf: %.2f)",
+            inp.symbol, inp.pipeline_id, verdict, display_label, score_display, confidence
         )
         return decision
 
