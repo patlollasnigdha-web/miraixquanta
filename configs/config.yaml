@@ -203,3 +203,12 @@ backtesting:
   initial_capital: 1000000.0
   risk_free_rate: 0.065 # 6.5% Indian 10Y G-Sec benchmark
   benchmark_symbol: "NIFTY50"
+
+paper_trading:
+  initial_capital: 1000000.0
+  cash_reserve_pct: 0.05
+  default_mode: "historical_replay" # "historical_replay" or "live_feed"
+  stale_data_timeout_sec: 300.0
+  replay_speed_multiplier: 1.0
+  db_path: "data/paper_trading.db"
+

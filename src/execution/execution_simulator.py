@@ -205,6 +205,25 @@ class ExecutionSimulator:
                 exec_price = max(limit_price, slip_res.execution_price)
 
         if not is_fillable:
+            if getattr(order.request, "time_in_force", "DAY") == "GTC":
+                # GTC limit order remains open across bars
+                return ExecutionResult(
+                    order_id=order.order_id,
+                    symbol=order.symbol,
+                    side=order.side,
+                    order_type=order.order_type,
+                    filled_quantity=0,
+                    execution_price=0.0,
+                    reference_price=limit_price,
+                    slippage=0.0,
+                    slippage_bps=0.0,
+                    gross_value=0.0,
+                    total_cost=0.0,
+                    net_value=0.0,
+                    cost_breakdown={},
+                    status=OrderStatus.SUBMITTED,
+                    timestamp=ts,
+                )
             # Cannot fill in this bar; order remains SUBMITTED (or EXPIRED if DAY order)
             order.transition_to(OrderStatus.EXPIRED, "Limit price not touched in current bar")
             return ExecutionResult(
