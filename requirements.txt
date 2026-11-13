@@ -11,3 +11,9 @@ xgboost
 joblib
 tqdm
 pyyaml
+pytest
+pytest-cov
+pyarrow
+streamlit
+statsmodels
+

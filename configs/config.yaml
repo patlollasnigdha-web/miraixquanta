@@ -1,0 +1,100 @@
+# ASTRAQUANT X — Central Configuration
+# Project: AI-Driven Adaptive Quantitative Trading and Intelligent Execution Framework
+
+system:
+  project_name: "ASTRAQUANT X"
+  random_seed: 42
+  log_level: "INFO"
+  log_file: "logs/astraquant.log"
+
+paths:
+  raw_fi2010_dir: "data/raw/fi2010"
+  processed_fi2010_dir: "data/processed/fi2010"
+  raw_benchmark_dir: "BenchmarkDatasets/BenchmarkDatasets"
+  raw_nifty_daily_dir: "NIFTY-50-Stock-Market-Data-main/NIFTY-50-Stock-Market-Data-main/data"
+  raw_nifty_intraday_dir: "nifty50-historical-data-main/nifty50-historical-data-main"
+  processed_nifty_dir: "data/processed/nifty50"
+  processed_multistock_dir: "data/processed/multistock"
+  model_save_dir: "models"
+  results_dir: "results"
+  reports_dir: "reports"
+  logs_dir: "logs"
+
+fi2010:
+  num_features: 144
+  default_horizon: 100
+  horizons: [10, 20, 30, 50, 100]
+  label_mapping:
+    1: "Upward"
+    2: "Stationary"
+    3: "Downward"
+  normalization_types: ["ZScore", "MinMax", "DecPre"]
+
+nifty50:
+  timeframes: ["1d", "1min", "15sec"]
+  trading_hours_per_day: 6.25
+  annualization_factor: 252
+  intraday_start_time: "09:15:00"
+  intraday_end_time: "15:30:00"
+
+models:
+  random_forest:
+    n_estimators: 150
+    max_depth: 20
+    min_samples_leaf: 5
+    class_weight: "balanced_subsample"
+    random_state: 42
+    n_jobs: -1
+  xgboost:
+    n_estimators: 150
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    random_state: 42
+    n_jobs: -1
+
+regime_detection:
+  n_regimes: 3
+  regime_names: ["Trending_Bull", "Mean_Reverting_Sideways", "High_Vol_Bear"]
+  volatility_window: 20
+
+strategies:
+  momentum:
+    fast_window: 10
+    slow_window: 50
+  mean_reversion:
+    bb_window: 20
+    bb_std: 2.0
+    rsi_window: 14
+    rsi_oversold: 30
+    rsi_overbought: 70
+
+portfolio:
+  allocation_method: "hrp" # options: "equal_weight", "mean_variance", "hrp", "risk_parity"
+  rebalance_frequency: "monthly"
+  max_asset_weight: 0.20
+  min_asset_weight: 0.01
+
+risk_management:
+  max_portfolio_drawdown: 0.15
+  position_stop_loss: 0.02
+  trailing_stop_activation: 0.03
+  trailing_stop_distance: 0.015
+  var_confidence: 0.95
+  max_leverage: 1.0
+
+execution:
+  default_slippage_bps: 2.0
+  brokerage_pct: 0.0003
+  stt_pct: 0.00025 # Securities Transaction Tax (NSE equity delivery/intraday blend)
+  exchange_turnover_fee_pct: 0.0000345
+  sebi_charges_pct: 0.000001
+  stamp_duty_pct: 0.00003
+  gst_pct: 0.18 # 18% on (brokerage + exchange charges)
+  latency_ms: 10.0
+
+backtesting:
+  initial_capital: 1000000.0
+  risk_free_rate: 0.065 # 6.5% Indian 10Y G-Sec benchmark
+  benchmark_symbol: "NIFTY50"
