@@ -109,3 +109,32 @@ class InvestmentDecisionEngine:
             inp.symbol, inp.pipeline_id, verdict, display_label, composite_score, confidence
         )
         return decision
+
+    def make_decision_with_risk(
+        self,
+        inp: DecisionInput,
+        risk_engine: Any,
+        current_capital: Optional[float] = None,
+        atr: Optional[float] = None,
+        win_rate: Optional[float] = None,
+        win_loss_ratio: Optional[float] = None,
+        sizing_method: str = "risk_budgeting",
+    ) -> InvestmentDecision:
+        """
+        Executes decision generation and immediately evaluates it through M11 RiskManagementEngine.
+        Transitions risk_status from RISK_PENDING to RISK_APPROVED or RISK_BLOCKED,
+        blocking YES decisions if risk constraints are breached.
+        """
+        decision = self.make_decision(inp)
+        ref_price = inp.current_price or decision.entry_reference_price or 100.0
+        decision, _ = risk_engine.apply_risk_to_decision(
+            decision=decision,
+            current_price=ref_price,
+            current_capital=current_capital,
+            atr=atr,
+            win_rate=win_rate,
+            win_loss_ratio=win_loss_ratio,
+            sizing_method=sizing_method,
+        )
+        return decision
+

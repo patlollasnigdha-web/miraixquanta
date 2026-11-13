@@ -168,18 +168,26 @@ decision_engine:
   require_risk_approval: false
 
 portfolio:
-  allocation_method: "hrp" # options: "equal_weight", "mean_variance", "hrp", "risk_parity"
+  allocation_method: "min_variance" # options: "equal_weight", "min_variance", "mean_variance", "risk_parity"
   rebalance_frequency: "monthly"
-  max_asset_weight: 0.20
-  min_asset_weight: 0.01
+  max_asset_weight: 0.25 # Max 25% allocation to any single stock
+  min_asset_weight: 0.02 # Min 2% allocation to included stocks
+  cash_reserve: 0.05 # 5% minimum cash buffer
+  max_total_exposure: 0.95 # Max 95% total invested
+  long_only: true
+  risk_free_rate: 0.065 # 6.5% Indian 10Y G-Sec benchmark
 
 risk_management:
-  max_portfolio_drawdown: 0.15
-  position_stop_loss: 0.02
-  trailing_stop_activation: 0.03
-  trailing_stop_distance: 0.015
-  var_confidence: 0.95
-  max_leverage: 1.0
+  max_portfolio_drawdown: 0.15 # 15% maximum portfolio drawdown before HALT
+  daily_loss_limit: 0.03 # 3% daily loss triggers RESTRICTED state
+  position_risk_budget_pct: 0.01 # 1% portfolio risk per trade
+  max_position_size_pct: 0.20 # Max 20% portfolio capital per trade
+  default_stop_loss_pct: 0.02 # 2% default stop loss if ATR unavailable
+  atr_multiplier: 2.0
+  trailing_stop_activation: 0.03 # Trailing stop activates after +3% gain
+  trailing_stop_distance: 0.015 # 1.5% trailing distance
+  var_confidence: 0.95 # 95% confidence level for VaR / CVaR
+  max_leverage: 1.0 # Long-only cash equity (no leverage)
 
 execution:
   default_slippage_bps: 2.0
