@@ -1,5 +1,5 @@
 """
-ASTRAQUANT X — Random Forest Classifier Model
+MIRAI — Random Forest Classifier Model (M03)
 Modular, reproducible Random Forest implementation for market movement prediction.
 """
 
@@ -11,12 +11,13 @@ from sklearn.ensemble import RandomForestClassifier
 
 from src.utils.config import get_config, PROJECT_ROOT
 from src.utils.logger import get_logger
+from src.models.base_model import BasePredictiveModel
 from src.models.model_evaluation import evaluate_classifier
 
 logger = get_logger("RandomForestModel")
 
 
-class AstraRandomForest:
+class AstraRandomForest(BasePredictiveModel):
     """
     Random Forest wrapper supporting configurable hyperparameters, class weighting,
     prediction, feature importance analysis, and model serialization.
@@ -30,7 +31,17 @@ class AstraRandomForest:
         class_weight: Optional[Union[str, dict]] = None,
         random_state: Optional[int] = None,
         n_jobs: Optional[int] = None,
+        pipeline_id: str = "pipeline_a_fi2010",
+        prediction_target: str = "mid_price_movement",
+        prediction_horizon: int = 100,
     ):
+        super().__init__(
+            model_name="AstraRandomForest",
+            task_type="classification",
+            pipeline_id=pipeline_id,
+            prediction_target=prediction_target,
+            prediction_horizon=prediction_horizon,
+        )
         cfg = get_config()
         rf_cfg = cfg.get("models.random_forest", {})
 
@@ -51,13 +62,23 @@ class AstraRandomForest:
         )
         self.is_fitted = False
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "AstraRandomForest":
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        X_val: Optional[np.ndarray] = None,
+        y_val: Optional[np.ndarray] = None,
+        **kwargs: Any,
+    ) -> "AstraRandomForest":
         """Fits the Random Forest model on training data."""
+        X_arr = self.validate_input_shape(X, expected_dim=2)
+        y_arr = np.asarray(y)
+
         logger.info(
             "Fitting RandomForest (n_estimators=%d, max_depth=%s, class_weight=%s)...",
             self.n_estimators, str(self.max_depth), str(self.class_weight)
         )
-        self.model.fit(X, y)
+        self.model.fit(X_arr, y_arr)
         self.is_fitted = True
         logger.info("RandomForest fitting complete.")
         return self
@@ -66,13 +87,15 @@ class AstraRandomForest:
         """Predicts class labels for samples in X."""
         if not self.is_fitted:
             raise RuntimeError("Model is not fitted yet. Call fit() before predicting.")
-        return self.model.predict(X)
+        X_arr = self.validate_input_shape(X, expected_dim=2)
+        return self.model.predict(X_arr)
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """Predicts class probabilities for samples in X."""
         if not self.is_fitted:
             raise RuntimeError("Model is not fitted yet. Call fit() before predicting.")
-        return self.model.predict_proba(X)
+        X_arr = self.validate_input_shape(X, expected_dim=2)
+        return self.model.predict_proba(X_arr)
 
     def evaluate(
         self,

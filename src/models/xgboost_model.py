@@ -1,5 +1,5 @@
 """
-ASTRAQUANT X — XGBoost Classifier Model
+MIRAI — XGBoost Classifier Model (M03)
 Gradient-boosted decision tree pipeline for high-frequency market movement prediction.
 """
 
@@ -11,12 +11,13 @@ from xgboost import XGBClassifier
 
 from src.utils.config import get_config, PROJECT_ROOT
 from src.utils.logger import get_logger
+from src.models.base_model import BasePredictiveModel
 from src.models.model_evaluation import evaluate_classifier
 
 logger = get_logger("XGBoostModel")
 
 
-class AstraXGBoost:
+class AstraXGBoost(BasePredictiveModel):
     """
     XGBoost classifier supporting multi-class market prediction.
     Automatically handles 1-based FI-2010 labels {1, 2, 3} <-> 0-based {0, 1, 2}.
@@ -31,7 +32,18 @@ class AstraXGBoost:
         colsample_bytree: Optional[float] = None,
         random_state: Optional[int] = None,
         n_jobs: Optional[int] = None,
+        tree_method: Optional[str] = None,
+        pipeline_id: str = "pipeline_a_fi2010",
+        prediction_target: str = "mid_price_movement",
+        prediction_horizon: int = 100,
     ):
+        super().__init__(
+            model_name="AstraXGBoost",
+            task_type="classification",
+            pipeline_id=pipeline_id,
+            prediction_target=prediction_target,
+            prediction_horizon=prediction_horizon,
+        )
         cfg = get_config()
         xgb_cfg = cfg.get("models.xgboost", {})
 
@@ -42,7 +54,7 @@ class AstraXGBoost:
         self.colsample_bytree = colsample_bytree or xgb_cfg.get("colsample_bytree", 0.8)
         self.random_state = random_state or xgb_cfg.get("random_state", 42)
         self.n_jobs = n_jobs or xgb_cfg.get("n_jobs", 4)
-        self.tree_method = xgb_cfg.get("tree_method", "hist")
+        self.tree_method = tree_method or xgb_cfg.get("tree_method", "hist")
 
         self.model = XGBClassifier(
             n_estimators=self.n_estimators,
@@ -68,14 +80,23 @@ class AstraXGBoost:
     def _to_external_labels(self, y: np.ndarray) -> np.ndarray:
         return y + self.label_offset
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "AstraXGBoost":
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        X_val: Optional[np.ndarray] = None,
+        y_val: Optional[np.ndarray] = None,
+        **kwargs: Any,
+    ) -> "AstraXGBoost":
         """Fits XGBoost classifier on training data."""
-        y_int = self._to_internal_labels(y)
+        X_arr = self.validate_input_shape(X, expected_dim=2)
+        y_int = self._to_internal_labels(np.asarray(y))
+
         logger.info(
-            "Fitting XGBoost (n_estimators=%d, max_depth=%d, lr=%.3f)...",
-            self.n_estimators, self.max_depth, self.learning_rate
+            "Fitting XGBoost (n_estimators=%d, max_depth=%d, lr=%.3f, tree_method=%s)...",
+            self.n_estimators, self.max_depth, self.learning_rate, self.tree_method
         )
-        self.model.fit(X, y_int)
+        self.model.fit(X_arr, y_int)
         self.is_fitted = True
         logger.info("XGBoost fitting complete.")
         return self
@@ -84,14 +105,16 @@ class AstraXGBoost:
         """Predicts class labels in original label space {1, 2, 3}."""
         if not self.is_fitted:
             raise RuntimeError("Model is not fitted yet.")
-        preds_int = self.model.predict(X)
+        X_arr = self.validate_input_shape(X, expected_dim=2)
+        preds_int = self.model.predict(X_arr)
         return self._to_external_labels(preds_int)
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """Predicts class probabilities."""
         if not self.is_fitted:
             raise RuntimeError("Model is not fitted yet.")
-        return self.model.predict_proba(X)
+        X_arr = self.validate_input_shape(X, expected_dim=2)
+        return self.model.predict_proba(X_arr)
 
     def evaluate(
         self,

@@ -54,6 +54,28 @@ models:
     tree_method: "hist"
     random_state: 42
     n_jobs: 4
+  lstm:
+    input_dim: 144
+    sequence_length: 10
+    hidden_dim: 64
+    num_layers: 2
+    dropout: 0.2
+    learning_rate: 0.001
+    epochs: 15
+    batch_size: 64
+    patience: 4
+  transformer:
+    input_dim: 144
+    sequence_length: 10
+    d_model: 64
+    n_heads: 4
+    num_layers: 2
+    dim_feedforward: 128
+    dropout: 0.1
+    learning_rate: 0.001
+    epochs: 15
+    batch_size: 64
+    patience: 4
 
 regime_detection:
   n_regimes: 3
