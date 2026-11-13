@@ -41,7 +41,8 @@ class AstraXGBoost:
         self.subsample = subsample or xgb_cfg.get("subsample", 0.8)
         self.colsample_bytree = colsample_bytree or xgb_cfg.get("colsample_bytree", 0.8)
         self.random_state = random_state or xgb_cfg.get("random_state", 42)
-        self.n_jobs = n_jobs or xgb_cfg.get("n_jobs", -1)
+        self.n_jobs = n_jobs or xgb_cfg.get("n_jobs", 4)
+        self.tree_method = xgb_cfg.get("tree_method", "hist")
 
         self.model = XGBClassifier(
             n_estimators=self.n_estimators,
@@ -51,6 +52,7 @@ class AstraXGBoost:
             colsample_bytree=self.colsample_bytree,
             random_state=self.random_state,
             n_jobs=self.n_jobs,
+            tree_method=self.tree_method,
             objective="multi:softprob",
             num_class=3,
             eval_metric="mlogloss",

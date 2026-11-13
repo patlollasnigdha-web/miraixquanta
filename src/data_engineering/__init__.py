@@ -1,4 +1,4 @@
-"""Data engineering package for ASTRAQUANT X."""
+"""Data engineering package for MIRAI (M01)."""
 
 from src.data_engineering.clean_data import (
     validate_chronological_order,
@@ -16,6 +16,15 @@ from src.data_engineering.load_nifty50 import (
     load_nifty_daily_official,
     load_nifty_intraday,
 )
+from src.data_engineering.preprocess import (
+    TimeSeriesScaler,
+    clip_outliers,
+    align_multi_asset_calendar,
+)
+from src.data_engineering.data_access import (
+    DataAccessService,
+    get_data_access_service,
+)
 
 __all__ = [
     "validate_chronological_order",
@@ -29,4 +38,9 @@ __all__ = [
     "get_daily_returns",
     "load_nifty_daily_official",
     "load_nifty_intraday",
+    "TimeSeriesScaler",
+    "clip_outliers",
+    "align_multi_asset_calendar",
+    "DataAccessService",
+    "get_data_access_service",
 ]
