@@ -50,8 +50,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setHealthReport(health);
         setBackendStatus(health.overall_status === 'HEALTHY' ? 'ONLINE' : 'DEGRADED');
 
-        const ollamaComponent = health.components?.ollama_service;
-        if (ollamaComponent && ollamaComponent.status === 'HEALTHY') {
+        const ollamaComponent = health.components?.ollama || health.components?.ollama_service;
+        if (ollamaComponent && (ollamaComponent.status === 'HEALTHY' || (ollamaComponent.status as string) === 'ONLINE')) {
           setOllamaStatus('ONLINE');
         } else {
           setOllamaStatus('OFFLINE');
