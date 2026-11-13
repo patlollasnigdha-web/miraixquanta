@@ -78,9 +78,50 @@ models:
     patience: 4
 
 regime_detection:
-  n_regimes: 3
-  regime_names: ["Trending_Bull", "Mean_Reverting_Sideways", "High_Vol_Bear"]
+  n_regimes: 6
+  regime_names:
+    - "BULLISH_TRENDING"
+    - "BEARISH_TRENDING"
+    - "SIDEWAYS_RANGE_BOUND"
+    - "HIGH_VOLATILITY"
+    - "LOW_VOLATILITY"
+    - "STRESS_ABNORMAL"
   volatility_window: 20
+  trend_window: 50
+  drawdown_window: 60
+  gmm_covariance_type: "full"
+  random_state: 42
+
+stock_strength:
+  weights:
+    momentum: 0.20
+    relative_strength: 0.25
+    volume: 0.15
+    trend: 0.20
+    volatility_adjusted: 0.10
+    liquidity: 0.10
+  windows:
+    short: 5
+    medium: 20
+    long: 60
+  thresholds:
+    very_strong: 80.0
+    strong: 65.0
+    neutral: 45.0
+    weak: 30.0
+  movement_threshold: 3.0 # Points change to trigger strengthening/weakening
+
+sentiment:
+  engine: "lexicon" # "finbert" or "lexicon"
+  recency_decay_hours: 48.0 # exponential half-life for news weighting
+  neutral_score: 50.0
+
+fundamentals:
+  max_stale_days: 180 # Quarter results stale after 180 days
+  pe_healthy_max: 30.0
+  pb_healthy_max: 4.0
+  roe_healthy_min: 0.15
+  de_healthy_max: 1.5
 
 strategies:
   momentum:
