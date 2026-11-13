@@ -131,3 +131,8 @@ class BaseTradingStrategy(ABC):
         Must strictly condition on data <= as_of_date to eliminate lookahead bias.
         """
         pass
+
+
+# Convenience alias for backwards compatibility
+BaseStrategy = BaseTradingStrategy
+
