@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+
+# Large benchmark and external datasets
+BenchmarkDatasets/
+NIFTY-50-Stock-Market-Data-main/
+nifty50-historical-data-main/
+fi2010/
+
+# Data and model binaries
+data/raw/
+data/processed/
+models/*.joblib
+models/*.pt
+*.npz
+*.parquet
+*.csv
+
+# Logs and outputs
+logs/
+results/
+reports/
