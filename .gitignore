@@ -1,31 +1,36 @@
+# Virtual Environment & Packages
 .venv/
 node_modules/
 frontend/node_modules/
 frontend/dist/
 dist/
+
+# Python Cache & Notebooks
 __pycache__/
 *.pyc
+.pytest_cache/
 .ipynb_checkpoints/
+
+# Local Environment Variables & Secrets
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Large benchmark and external datasets
-BenchmarkDatasets/
-NIFTY-50-Stock-Market-Data-main/
-nifty50-historical-data-main/
-fi2010/
+# Local SQLite databases (created automatically on startup)
+data/*.db
+data/external/
 
-# Data and model binaries
-data/raw/
+# Intermediate caches
 data/processed/
-*.db
-models/*.joblib
-models/*.pt
-*.npz
-*.parquet
-*.csv
+data/raw/fi2010/
 
-# Logs and outputs
-logs/
+# Logs & temporary run outputs
+logs/*.log
 results/
 reports/
+
+# Keep NIFTY 50 constituent datasets and models tracked
+!NIFTY-50-Stock-Market-Data-main/
+!models/

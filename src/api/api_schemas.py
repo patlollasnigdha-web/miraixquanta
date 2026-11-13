@@ -39,6 +39,28 @@ class MarketDataResponse(BaseModel):
     pipeline: str = "pipeline_b_nifty"
 
 
+class StockCandle(BaseModel):
+    time: str
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+
+
+class StockCandlesResponse(BaseModel):
+    symbol: str
+    pipeline: str = "pipeline_b_nifty"
+    timeframe: str = "ALL"
+    bars_count: int
+    latest_timestamp: str
+    latest_price: float
+    daily_return_pct: Optional[float] = None
+    weekly_return_pct: Optional[float] = None
+    nifty_relative_return_pct: Optional[float] = None
+    candles: List[StockCandle]
+
+
 # -----------------------------------------------------------------------------
 # Stock Intelligence Schemas
 # -----------------------------------------------------------------------------

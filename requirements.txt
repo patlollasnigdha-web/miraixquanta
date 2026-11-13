@@ -17,6 +17,11 @@ pyarrow
 streamlit
 statsmodels
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
+bcrypt
+sqlalchemy
+python-multipart
+httpx
+psutil
 

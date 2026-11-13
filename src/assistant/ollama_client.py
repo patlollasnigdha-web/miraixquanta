@@ -112,3 +112,38 @@ class OllamaClient:
         except Exception as e:
             logger.error("Ollama invocation failed: %s", e)
             raise OllamaServiceUnavailableError(f"Ollama chat execution error: {str(e)}") from e
+
+    async def generate(
+        self,
+        prompt: str,
+        model: Optional[str] = None,
+        temperature: float = 0.3,
+    ) -> str:
+        """
+        Sends completion generation request to /api/generate.
+        """
+        target_model = model or self.model
+        url = f"{self.host}/api/generate"
+        payload = {
+            "model": target_model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": temperature,
+            },
+        }
+        try:
+            req_data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(
+                url,
+                data=req_data,
+                headers={"Content-Type": "application/json", "User-Agent": "MIRAI-Assistant/1.0"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=self.timeout) as response:
+                body = json.loads(response.read().decode("utf-8"))
+                return body.get("response", "")
+        except Exception as e:
+            logger.warning("Ollama generate failed or offline: %s", e)
+            raise OllamaServiceUnavailableError(f"Ollama generation failed: {e}") from e
+

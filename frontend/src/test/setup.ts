@@ -22,6 +22,19 @@ vi.mock('recharts', async () => {
   };
 });
 
+// Polyfill localStorage for Node/JSDOM
+if (!globalThis.localStorage || typeof globalThis.localStorage.getItem !== 'function') {
+  const store: Record<string, string> = {};
+  globalThis.localStorage = {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = String(value); },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { Object.keys(store).forEach((k) => delete store[k]); },
+    key: (index: number) => Object.keys(store)[index] || null,
+    length: 0,
+  } as any;
+}
+
 // Polyfill window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

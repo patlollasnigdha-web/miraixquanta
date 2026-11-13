@@ -4,7 +4,10 @@
 
 @layer base {
   body {
-    @apply bg-[#0B0F19] text-slate-100 font-sans;
+    @apply bg-[#0B0F19] text-slate-100 font-sans transition-colors duration-200 antialiased;
+  }
+  html.light body {
+    @apply bg-slate-50 text-slate-900;
   }
 }
 
@@ -14,7 +17,7 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B0F19;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #1F2937;
@@ -24,10 +27,25 @@
   background: #374151;
 }
 
+html.light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
 .terminal-card {
-  @apply bg-[#111827] border border-[#1F2937] rounded-lg shadow-lg;
+  @apply bg-[#111827] border border-[#1F2937] rounded-xl shadow-lg;
+}
+
+html.light .terminal-card {
+  @apply bg-white border-slate-200 shadow-sm text-slate-900;
 }
 
 .terminal-border {
   @apply border-[#1F2937];
+}
+
+html.light .terminal-border {
+  @apply border-slate-200;
 }

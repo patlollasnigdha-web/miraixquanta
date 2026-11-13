@@ -21,6 +21,8 @@ from src.api.exception_handlers import (
 from src.paper_trading.paper_trading_schemas import InvalidSessionStateError
 from src.assistant.ollama_client import OllamaServiceUnavailableError
 from src.monitoring.metrics_collector import default_metrics
+from src.api.auth_database import init_db
+from src.api.routes.compat_router import router as compat_router
 from src.api.routes import (
     health_router,
     market_data_router,
@@ -43,6 +45,7 @@ logger = get_logger("MIRAI-API")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown lifecycle management."""
+    init_db()
     logger.info("MIRAI FastAPI Backend initialized successfully.")
     default_metrics.set_gauge("app_status", 1.0)
     yield
@@ -65,9 +68,18 @@ def create_app() -> FastAPI:
     )
 
     # 1. CORS Configuration
+    origins = set(settings.cors_origins)
+    origins.update([
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://mirai-jgw59fhk8-poojasrikandhula-6164s-projects.vercel.app",
+    ])
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=sorted(origins) if "*" not in origins else ["*"],
+        allow_origin_regex=r"https://.*\.vercel\.app" if "*" not in origins else None,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -110,6 +122,10 @@ def create_app() -> FastAPI:
     app.include_router(paper_trading_router, prefix=api_prefix)
     app.include_router(assistant_router, prefix=api_prefix)
     app.include_router(monitoring_router, prefix=api_prefix)
+    # Multi-prefix compatibility for frontend variants (/api, /api/v1, /api/v1/api)
+    app.include_router(compat_router, prefix="/api")
+    app.include_router(compat_router, prefix="/api/v1")
+    app.include_router(compat_router, prefix="/api/v1/api")
 
     # Root probe
     @app.get("/", tags=["Root"])
