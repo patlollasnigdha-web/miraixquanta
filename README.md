@@ -6,7 +6,7 @@ MIRAI is an end-to-end institutional algorithmic trading framework combining mac
 
 ##live deployed webiste
 
-open [https://miraixquanta-sn7k.vercel.app]https://miraixquanta-sn7k.vercel.app
+open=> https://miraixquanta-sn7k.vercel.app
 ---
 
 ## Architecture Overview (Modules M01–M18)
