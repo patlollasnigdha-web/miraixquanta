@@ -16,7 +16,3 @@ services:
         value: https://mirai-jgw59fhk8-poojasrikandhula-6164s-projects.vercel.app,http://localhost:3000
       - key: OLLAMA_HOST
         value: http://localhost:11434
-    disk:
-      name: mirai-data
-      mountPath: /app/data
-      sizeGB: 1
