@@ -5,7 +5,8 @@
 MIRAI is an end-to-end institutional algorithmic trading framework combining machine learning predictions, market microstructure analysis, multi-factor stock strength intelligence, point-in-time financial sentiment, market regime detection, adaptive strategy switching, evidence-based investment decisions, portfolio optimisation, dynamic risk controls, intelligent order execution, historical backtesting, virtual paper trading, an Ollama LLM copilot, and an interactive dark-themed dashboard.
 
 ##live deployed webiste
- open [https://miraixquanta-sn7k.vercel.app]https://miraixquanta-sn7k.vercel.app
+
+open [https://miraixquanta-sn7k.vercel.app]https://miraixquanta-sn7k.vercel.app
 ---
 
 ## Architecture Overview (Modules M01–M18)
