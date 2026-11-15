@@ -2,16 +2,18 @@
 MIRAI — Generative AI Assistant Endpoints (M15)
 """
 
+from datetime import datetime
 from fastapi import APIRouter, Depends
 from src.api.dependencies import get_assistant_engine
 from src.assistant.assistant_engine import AssistantEngine
 from src.api.api_schemas import AssistantChatRequest, AssistantChatResponse, APIResponse
+from src.prediction.four_company_engine import four_company_engine
 
 router = APIRouter(prefix="/assistant", tags=["Assistant"])
 
 
 @router.post("/chat", response_model=AssistantChatResponse)
-def assistant_chat(
+async def assistant_chat(
     req: AssistantChatRequest,
     assistant: AssistantEngine = Depends(get_assistant_engine),
 ):
@@ -19,16 +21,19 @@ def assistant_chat(
     Conversational natural-language interface for MIRAI.
     Translates user questions into factual backend tool executions and answers.
     """
-    res = assistant.ask(query=req.query, conversation_id=req.conversation_id)
+    res = await four_company_engine.generate_analyst_response(
+        query=req.query,
+        default_symbol="RELIANCE",
+    )
     return AssistantChatResponse(
-        message=res.message,
-        conversation_id=res.conversation_id,
-        intent=res.intent,
-        tools_called=res.tools_called,
-        verdict=res.verdict,
-        confidence=res.confidence,
-        disclaimer=res.disclaimer,
-        timestamp=res.timestamp,
+        message=res["answer"],
+        conversation_id=req.conversation_id or "default-session",
+        intent="FINANCIAL_ANALYST_VERDICT",
+        tools_called=["four_company_engine"],
+        verdict=res.get("verdict", "INSUFFICIENT DATA"),
+        confidence=None,
+        disclaimer="MIRAI Quantitative Framework · Research and decision support only · No trade execution.",
+        timestamp=datetime.now().isoformat(),
     )
 
 

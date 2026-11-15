@@ -4,6 +4,7 @@ Low-level client for interacting with the local Ollama LLM runtime.
 Gracefully handles offline states and API communication timeouts.
 """
 
+import asyncio
 import json
 import os
 import urllib.error
@@ -46,7 +47,7 @@ class OllamaClient:
         self.timeout = float(
             timeout_sec
             if timeout_sec is not None
-            else os.getenv("OLLAMA_TIMEOUT_SEC", cfg.get("assistant.timeout_sec", 30.0))
+            else os.getenv("OLLAMA_TIMEOUT_SEC", cfg.get("assistant.timeout_sec", 120.0))
         )
 
     def is_available(self) -> bool:
@@ -90,6 +91,9 @@ class OllamaClient:
             "stream": stream,
             "options": {
                 "temperature": temperature,
+                "num_predict": 100,
+                "num_ctx": 512,
+                "num_thread": 10,
             },
         }
 
@@ -113,15 +117,12 @@ class OllamaClient:
             logger.error("Ollama invocation failed: %s", e)
             raise OllamaServiceUnavailableError(f"Ollama chat execution error: {str(e)}") from e
 
-    async def generate(
+    def _sync_generate(
         self,
         prompt: str,
         model: Optional[str] = None,
         temperature: float = 0.3,
     ) -> str:
-        """
-        Sends completion generation request to /api/generate.
-        """
         target_model = model or self.model
         url = f"{self.host}/api/generate"
         payload = {
@@ -130,6 +131,9 @@ class OllamaClient:
             "stream": False,
             "options": {
                 "temperature": temperature,
+                "num_predict": 100,
+                "num_ctx": 512,
+                "num_thread": 10,
             },
         }
         try:
@@ -146,4 +150,15 @@ class OllamaClient:
         except Exception as e:
             logger.warning("Ollama generate failed or offline: %s", e)
             raise OllamaServiceUnavailableError(f"Ollama generation failed: {e}") from e
+
+    async def generate(
+        self,
+        prompt: str,
+        model: Optional[str] = None,
+        temperature: float = 0.3,
+    ) -> str:
+        """
+        Sends completion generation request to /api/generate via async thread.
+        """
+        return await asyncio.to_thread(self._sync_generate, prompt, model, temperature)
 

@@ -17,7 +17,7 @@ const baseURL = configuredApiBase ? (configuredApiBase.endsWith('/api') ? config
 
 export const api: AxiosInstance & Record<string, any> = axios.create({
   baseURL,
-  timeout: 30000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -71,6 +71,14 @@ export async function loadHistory(symbol: string, period = '1y') {
 export async function loadOverview(symbol: string, period = '1y') {
   return (await api.get('/market/overview', { params: { symbol, period } })).data;
 }
+
+// -------------------------------------------------------------
+// FOUR-COMPANY PREDICTION & DECISION API
+// -------------------------------------------------------------
+api.getFourCompanyPredictions = async (horizon = 5) =>
+  (await api.get('/predictions/companies', { params: { horizon, include_ollama: true } })).data;
+api.getCompanyPrediction = async (symbol: string, horizon = 5) =>
+  (await api.get(`/predictions/companies/${symbol}`, { params: { horizon } })).data;
 
 // -------------------------------------------------------------
 // BACKWARD-COMPATIBLE API HELPERS (FOR ADVANCED QUANT DASHBOARD)

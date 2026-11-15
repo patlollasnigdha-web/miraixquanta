@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: mirai-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MIRAI_API_HOST
+        value: 0.0.0.0
+      - key: MIRAI_SECRET_KEY
+        generateValue: true
+      - key: MIRAI_CORS_ORIGINS
+        value: https://mirai-jgw59fhk8-poojasrikandhula-6164s-projects.vercel.app,http://localhost:3000
+      - key: OLLAMA_HOST
+        value: http://localhost:11434
+    disk:
+      name: mirai-data
+      mountPath: /app/data
+      sizeGB: 1

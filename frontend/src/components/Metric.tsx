@@ -1,0 +1,1 @@
+export default function Metric({label,value,unit='',change,tone=''}:{label:string;value:string|number|null|undefined;unit?:string;change?:string;tone?:string}){return <div className="metric"><span className="eyebrow">{label}</span><div className={'metric-value '+tone}>{value??'—'}<small>{unit}</small></div>{change&&<span className="metric-note">{change}</span>}</div>}

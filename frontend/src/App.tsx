@@ -21,6 +21,13 @@ import {
   ForgotPasswordPage,
   ResetPasswordPage,
 } from './pages/AuthPages';
+import { PredictionsPage } from './pages/PredictionsPage';
+import {
+  LivePaperTradingPage,
+  RiskManagementDashboard,
+  TradingPerformanceDashboard,
+  LatencyMonitoringDashboard,
+} from './pages/TradingPages';
 
 // Legacy quant workspace components for App.test.tsx backward compatibility
 import { AppProvider } from './context/AppContext';
@@ -117,6 +124,11 @@ export const App: React.FC = () => {
         }
       >
         <Route path="/" element={<Dashboard />} />
+        <Route path="/predictions" element={<PredictionsPage />} />
+        <Route path="/paper-trading" element={<LivePaperTradingPage />} />
+        <Route path="/risk" element={<RiskManagementDashboard />} />
+        <Route path="/performance" element={<TradingPerformanceDashboard />} />
+        <Route path="/monitoring" element={<LatencyMonitoringDashboard />} />
         <Route path="/markets" element={<Markets />} />
         <Route path="/regimes" element={<Regimes />} />
         <Route path="/discovery" element={<Strategies />} />

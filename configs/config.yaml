@@ -223,7 +223,7 @@ api:
 assistant:
   ollama_host: "http://localhost:11434"
   default_model: "qwen2.5-coder:7b"
-  timeout_sec: 30.0
+  timeout_sec: 120.0
   max_turns: 20
   temperature: 0.1
   enable_tool_calling: true

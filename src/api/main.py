@@ -68,18 +68,23 @@ def create_app() -> FastAPI:
     )
 
     # 1. CORS Configuration
-    origins = set(settings.cors_origins)
-    origins.update([
+    allowed_origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
         "https://mirai-jgw59fhk8-poojasrikandhula-6164s-projects.vercel.app",
-    ])
+    ]
+    for o in settings.cors_origins:
+        if o and o != "*":
+            allowed_origins.append(o)
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=sorted(origins) if "*" not in origins else ["*"],
-        allow_origin_regex=r"https://.*\.vercel\.app" if "*" not in origins else None,
+        allow_origins=sorted(list(set(allowed_origins))),
+        allow_origin_regex=r"https://.*\.vercel\.app",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -122,7 +127,8 @@ def create_app() -> FastAPI:
     app.include_router(paper_trading_router, prefix=api_prefix)
     app.include_router(assistant_router, prefix=api_prefix)
     app.include_router(monitoring_router, prefix=api_prefix)
-    # Multi-prefix compatibility for frontend variants (/api, /api/v1, /api/v1/api)
+    # Multi-prefix compatibility for frontend variants (root, /api, /api/v1, /api/v1/api)
+    app.include_router(compat_router)
     app.include_router(compat_router, prefix="/api")
     app.include_router(compat_router, prefix="/api/v1")
     app.include_router(compat_router, prefix="/api/v1/api")
